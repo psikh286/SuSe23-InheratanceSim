@@ -1,9 +1,13 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
-namespace _Scripts
+
+public class TickManager : MonoBehaviour
 {
-    public class TickManager : MonoBehaviour
+    public static Action OnTick;
+
+    public void Test()
     {
-        
+        OnTick?.Invoke();
     }
 }

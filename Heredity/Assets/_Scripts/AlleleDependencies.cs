@@ -12,7 +12,8 @@ public class AlleleDependencies : ScriptableObject
 public enum AlleleType
 {
     Temperature,
-    Humidity
+    Humidity,
+    LifeSpan
 }
 public enum Domination
 {

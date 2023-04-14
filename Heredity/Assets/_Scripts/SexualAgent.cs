@@ -11,13 +11,13 @@ public class SexualAgent : Agent
     private List<SexualAgent> _unimpressedFemales = new(); 
     private SexualAgentStates _state = SexualAgentStates.LookingForMate;
 
-    private void OnEnable() => TickManager.OnTick += OnTick;
-    private void OnDisable() => TickManager.OnTick -= OnTick;
+    //private void OnEnable() => TickManager.OnTick += OnTick;
+    //private void OnDisable() => TickManager.OnTick -= OnTick;
     
     private void Start()
     {
-        Init(new List<Allele>());
-        _stats = new Characteristics();
+        Male = Random.value > 0.5f;
+        if(!Male) GetComponent<SpriteRenderer>().color = Color.magenta;
     }
     private void Update()
     {
@@ -42,35 +42,32 @@ public class SexualAgent : Agent
             case SexualAgentStates.WalkingToMate:
                 if (Vector3.Distance(transform.position, _targetPoint) == 0f)
                 {
-                    _targetMate.SendDNA(_dna);
-                    _state = SexualAgentStates.Cooldown;
+                    _state = SexualAgentStates.Reproducing;
                     _targetPoint = _camera.ViewportToWorldPoint(new Vector2(Random.value, Random.value)) + Vector3.forward * 10f;
                 }
 
                 transform.position = Vector3.MoveTowards(transform.position, _targetPoint, Time.deltaTime);
                 break;
+            case SexualAgentStates.Reproducing:
+                if(_targetMate) _targetMate.Impregnate(_dna);
+                _state = SexualAgentStates.Cooldown;
+                break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
     }
-
-    public override void Init(List<Allele> stats, List<Allele> stats1 = null)
-    {
-        base.Init(stats, stats1);
-
-        //Male = Random.value > 0.5f;
-    }
-
-    protected override void OnTick()
-    {
-        base.OnTick();
-        
-        if(Male && _state == SexualAgentStates.LookingForMate) LookForMate();
-    }
-
     
+    // protected override void OnTick()
+    // {
+    //     base.OnTick();
+    //     
+    //     if(Male && _state == SexualAgentStates.LookingForMate) LookForMate();
+    // }
+
+    #region LookingForMate
     private void LookForMate()
     {
+        // ReSharper disable once Unity.PreferNonAllocApi
         var hits = Physics2D.OverlapCircleAll(transform.position, 200f);
 
         foreach (var hit in hits)
@@ -102,7 +99,7 @@ public class SexualAgent : Agent
         else
         {
             _unimpressedFemales.Add(female);
-            StartCoroutine(ForgetRejection(_stats.RejectionTime, female));
+            //StartCoroutine(ForgetRejection(_dna.Characteristics.RejectionTime, female));
         }
 
         return accepted;
@@ -111,32 +108,22 @@ public class SexualAgent : Agent
     {
         if (time <= 0) yield break;
         
-        yield return time;
+        yield return new WaitForSeconds(time);
         _unimpressedFemales.Remove(female);
     }
+    
 
-    private void SendDNA(List<Allele> dna)
-    {
-        Reproduce(dna);
-        _state = SexualAgentStates.Cooldown;
-    }
+    #endregion
 
-
-    private void Reproduce(List<Allele> maleDna)
+    #region Reproduction
+    private void Impregnate(DNA maleDna)
     {
         var r = Instantiate(this, transform.position, Quaternion.identity);
-        r.Init(maleDna, _dna);
+        r._dna.Init(maleDna, _dna);
+        _state = SexualAgentStates.Cooldown;
     }
-    // private void Reproduce()
-    // {
-    //     var path = _willingToSwitch && ReproductionCount == GlobalSettings.ReproductionTypeCount
-    //         ? "AsexualAgent"
-    //         : "SexualAgent";
-    //     var agent = Resources.Load<Agent>("Agents/" + path);
-    //
-    //     var r = Instantiate(agent, transform.position, Quaternion.identity);
-    //     r.Init(_dna);
-    // }
+    #endregion
+    
 }
 
 public enum SexualAgentStates
@@ -144,5 +131,6 @@ public enum SexualAgentStates
     Cooldown,
     LookingForMate,
     WalkingToMate,
-    WaitingForMate
+    WaitingForMate,
+    Reproducing
 }

@@ -1,16 +1,20 @@
-﻿[System.Serializable]
+﻿using System.Collections.Generic;
+
+[System.Serializable]
 public class Characteristics
 {
-    public float OptimumTemperature { get; private set; }
-    public float OptimumHumidity { get; private set; }
-    public float LifeSpan { get; private set; }
-    public float StressTolerance = 0.6f;
-    public float RejectionTime = 5f;
+    public readonly float OptimumTemperature;
+    public readonly float OptimumHumidity;
+    public readonly float LifeSpan;
+    public readonly float StressTolerance;
+    public readonly float RejectionTime;
+    public readonly int ReproductionCooldown;
 
-    public Characteristics(float optimumTemp = 0f, float optimumHumid = 0f, float lifeSpan = 20f)
+    public Dictionary<AlleleType, object> Values { get; private set; }
+    
+    public Characteristics(Dictionary<AlleleType, object> values)
     {
-        OptimumTemperature = optimumTemp;
-        OptimumHumidity = optimumHumid;
-        LifeSpan = lifeSpan;
+        Values = values;
     }
+
 }
