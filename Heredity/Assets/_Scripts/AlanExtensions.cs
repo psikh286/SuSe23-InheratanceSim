@@ -120,4 +120,30 @@ public static class AlanExtensions
     }
     
     #endregion
+
+    #region Vectors
+
+    public static Vector3 V22V3(this Vector2 v2)
+    {
+        return new Vector3(v2.x, 0, v2.y);
+    }
+
+    public static Vector2 V32V2(this Vector3 v3)
+    {
+        return new Vector2(v3.x , v3.y);
+    }
+
+    public static Vector2 ToVector2(this float radian)
+    {
+        return new Vector2(Mathf.Cos(radian), Mathf.Sin(radian));
+    }
+
+    public static float Vector2ToRadian(this Vector2 v2)
+    {
+        v2.Normalize();
+
+        return (Mathf.Acos(v2.x) + Mathf.Asin(v2.y)) / 2f;
+    }
+
+    #endregion
 }

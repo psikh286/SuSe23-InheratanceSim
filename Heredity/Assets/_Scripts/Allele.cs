@@ -1,9 +1,9 @@
 ﻿[System.Serializable]
 public class Allele
 {
-    public string Domination;
-    public AlleleType Type;
-    public object Value;
+    public readonly string Domination;
+    public readonly AlleleType Type;
+    public readonly object Value;
 
     public Allele(AlleleType type, object value, string domination)
     {

@@ -1,35 +1,47 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using Random = UnityEngine.Random;
 
-[System.Serializable]
+[Serializable]
 public class DNA
 {
-    public List<Allele> Alleles;
-    
-    public void Init(DNA dna, DNA dna1 = null)
+    public List<Allele> Alleles { get; private set; } = new();
+    private static readonly Random random = new();
+
+    public DNA(List<Allele> alleles)
     {
-        if (dna1 == null)
+        Alleles = alleles;
+    }
+    public DNA(DNA dna)
+    {
+        Alleles = new List<Allele>(dna.Alleles);
+    }
+    public DNA(DNA dna, DNA dna1)
+    {
+        foreach (var allele in dna.Alleles)
         {
-            Alleles = new List<Allele>(dna.Alleles);
+            var type = allele.Type;
+
+            var allele1 = dna1.Alleles.FirstOrDefault(r => r.Type == type);
+
+            var c = allele.Domination[random.Next(2)];
+            var c1 = allele1!.Domination[random.Next(2)];
+            var domination = $"{c}{c1}";
+                
+            var calculator = AlleleCalculatorFactory.GetCalculator(type);
+            var value = calculator.Calculate(allele.Value, allele1.Value, domination);
+                
+            Alleles.Add(new Allele(type, value, domination));
         }
-        else
+    }
+    
+    public object GetValue(AlleleType type)
+    {
+        var allele = Alleles.FirstOrDefault(a => a.Type == type);
+        if (allele == null)
         {
-            foreach (var allele in dna.Alleles)
-            {
-                var type = allele.Type;
-
-                var allele1 = dna1.Alleles.FirstOrDefault(r => r.Type == type);
-
-                var c = allele.Domination[Random.Range(0, 2)];
-                var c1 = allele1!.Domination[Random.Range(0, 2)];
-                var domination = $"{c}{c1}";
-                
-                var calculator = AlleleCalculatorFactory.GetCalculator(type);
-                var value = calculator.Calculate(allele.Value, allele1.Value, domination);
-                
-                Alleles.Add(new Allele(type, value, domination));
-            }
+            throw new ArgumentException($"No allele found for type {type}");
         }
+        return allele.Value;
     }
 }
