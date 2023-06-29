@@ -11,76 +11,88 @@ public class SexualAgent : Agent
     private bool _isWalking;
 
     private float _speed;
-    
-    private void Start()
-    {
-        Male = random.Next(2) == 1;
-        GetComponent<SpriteRenderer>().color = Male ? Color.cyan : Color.magenta;
-        _speed = _radius / TickManager.TickDelay;
-    }
-    private void Update()
-    {
-        if (Vector3.Distance(transform.position, _targetPoint) == 0f)
-        {
-            _isWalking = false;
-            return;
-        }
-        
-        _isWalking = true;
+    private const float _searchingRadius = 2.5f;
 
-        transform.position = Vector3.MoveTowards(transform.position, _targetPoint,_speed * Time.deltaTime);
+    private SpriteRenderer _renderer;
+
+    protected override void OnDnaInit()
+    {
+        base.OnDnaInit();
+        
+        _renderer = GetComponent<SpriteRenderer>();
+        PickGender();
+        _speed = _radius / 20f;
+        
+        _reproductionCooldownCount = _reproductionCooldown;
+        _state = SexualAgentStates.Cooldown;
+        
+        TickManager.OnTick += OnTick;
     }
-    
+
     protected override void OnTick()
     {
         base.OnTick();
-        
+
         switch (_state)
         {
-            case SexualAgentStates.Cooldown:
-                _reproductionCooldownCount--;
-                if (_reproductionCooldownCount > 0) break;
-                PickTargetPoint();
-                _reproductionCooldownCount = _reproductionCooldown;
-                _targetMate = null;
-                _state = SexualAgentStates.LookingForMate;
-                break;
-            
             case SexualAgentStates.LookingForMate:
                 if(Male) LookForMate();
-                if(!_isWalking) PickTargetPoint();
+                if(_targetMate is not null) break;
+                
+                if(_pointReached) PickTargetPoint();
+                Walk();
                 break;
             
             case SexualAgentStates.WalkingToMate:
-                if (_isWalking) break;
-                _state = SexualAgentStates.Reproducing;
+                if (_pointReached)
+                {
+                    _state = SexualAgentStates.Reproducing;
+                    _targetMate._state = SexualAgentStates.Reproducing;
+                    break;
+                }
+                Walk();
                 break;
             
             case SexualAgentStates.WaitingForMate:
+                if (_targetMate is null) _state = SexualAgentStates.LookingForMate;
                 break;
             
             case SexualAgentStates.Reproducing:
-                _targetMate.Impregnate(Dna);
+                if(Male) _targetMate.Impregnate(Dna);
+                _reproductionCooldownCount = _reproductionCooldown;
+                _targetMate = null;
                 _state = SexualAgentStates.Cooldown;
+                break;
+            
+            case SexualAgentStates.Cooldown:
+                _reproductionCooldownCount--;
+                
+                if(_pointReached) PickTargetPoint();
+                Walk();
+                
+                if (_reproductionCooldownCount > 0) break;
+                
+                _state = SexualAgentStates.LookingForMate;
                 break;
         }
     }
-
     
     private void LookForMate()
     {
         // ReSharper disable once Unity.PreferNonAllocApi
-        var hits = Physics2D.OverlapCircleAll(transform.position, _radius);
+        var hits = Physics2D.OverlapCircleAll(transform.position, _searchingRadius);
 
         foreach (var hit in hits)
         {
             if (!hit.TryGetComponent(out SexualAgent agent)) continue;
             if (agent.Male) continue;
             if (_unimpressedFemales.Contains(agent)) continue;
-            if (PotentialMateFound(agent)) break;
+            
+            PotentialMateFound(agent);
+            if (_targetMate is not null) break;
         }
     }
-    private bool PotentialMateFound(SexualAgent female)
+    private void PotentialMateFound(SexualAgent female)
     {
         var accepted = female.RequestMate(this);
 
@@ -94,13 +106,12 @@ public class SexualAgent : Agent
         {
             _unimpressedFemales.Add(female);
         }
-
-        return accepted;
     }
     
     private bool RequestMate(SexualAgent male)
     {
-        if (_targetMate != null) return false;
+        if (_targetMate is not null || _state != SexualAgentStates.LookingForMate) return false;
+        if ((float)random.NextDouble() >= 0.8f) return false;
         
         _targetMate = male;
         _targetPoint = transform.position;
@@ -110,17 +121,32 @@ public class SexualAgent : Agent
     }
     private void Impregnate(DNA maleDna)
     {
-        var r = Instantiate(this, transform.position, Quaternion.identity);
+        if(!this) return;
+        var l = this;
+        Destroy(l.gameObject.GetComponent<DnaInitializer>());
+        var r = Instantiate(l, transform.position, Quaternion.identity);
         r.InitializeDNA(maleDna, Dna);
-        _state = SexualAgentStates.Cooldown;
     }
+
+    private void PickGender()
+    {
+        Male = random.Next(2) == 1;
+        _renderer.color = Male ? Color.cyan : Color.magenta;
+    }
+
+    private void Walk() => transform.position = Vector3.MoveTowards(transform.position, _targetPoint, _speed);
+    private bool _pointReached => Vector3.Distance(transform.position, _targetPoint) == 0f;
 
     protected override void OnDrawGizmos()
     {
         base.OnDrawGizmos();
+        var position = transform.position;
         
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, _radius);
+        Gizmos.DrawWireSphere(position, _radius);
+        
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(position, _searchingRadius);
     }
 }
 

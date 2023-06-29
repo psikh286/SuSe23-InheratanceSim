@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 50a8ffd16b16455c8eeff61f5d1e651f, type: 3}
-  m_Name: Stats
+  m_Name: WeakStats
   m_EditorClassIdentifier: 
   _temp: 1
   _humidity: 1
-  _lifeSpan: 300
+  _lifeSpan: 100
   _stressTolerance: 100
   _rejectionTime: 0
   _reproductionCooldown: 30

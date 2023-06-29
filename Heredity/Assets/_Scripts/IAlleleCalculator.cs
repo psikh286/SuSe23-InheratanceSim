@@ -7,7 +7,7 @@ public class TemperatureCalculator : IAlleleCalculator
 {
     public object Calculate(object data, object data1, string domination)
     {
-        return (float)data;
+        return ((float)data + (float)data1) * 0.5f;
     }
 }
 
@@ -23,7 +23,7 @@ public class LifeSpanCalculator : IAlleleCalculator
 {
     public object Calculate(object data, object data1, string domination)
     {
-        return (int)data;
+        return (int)(((int)data + (int)data1) * 0.5f);
     }
 }
 

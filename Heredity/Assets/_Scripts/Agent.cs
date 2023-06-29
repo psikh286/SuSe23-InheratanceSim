@@ -26,14 +26,13 @@ public abstract class Agent : MonoBehaviour
         
         OnDnaInitialized?.Invoke();
     }
-    private void OnDnaInit()
+    protected virtual void OnDnaInit()
     {
-        print("dna was initialized");
+        OnDnaInitialized -= OnDnaInit;
+        
         _stressTolerance = (float)Dna.GetValue(AlleleType.StressTolerance);
         _lifeSpan = (int)Dna.GetValue(AlleleType.LifeSpan);
         _reproductionCooldown = (int)Dna.GetValue(AlleleType.ReproductionCooldown);
-        TickManager.OnTick += OnTick;
-        OnDnaInitialized -= OnDnaInit;
     }
     
     private void Awake()
@@ -48,7 +47,7 @@ public abstract class Agent : MonoBehaviour
 
     private void Die()
     { 
-        Destroy(gameObject);
+        if(gameObject) Destroy(gameObject);
     }
     protected virtual void OnTick()
     {
@@ -73,16 +72,17 @@ public abstract class Agent : MonoBehaviour
     
     protected void PickTargetPoint()
     {
-        var angle = 2f * Mathf.PI * (float)random.NextDouble();
         var position = transform.position;
         var origin = new Vector2(position.x, position.y);
+        
+        var angle = 2f * Mathf.PI * (float)random.NextDouble();
+        var distance = (float)random.NextDouble() * _radius;
 
         var dir = angle.ToVector2();
         
-        _targetPoint = origin + dir * _radius;
+        _targetPoint = origin + dir * distance;
 
-        var hit = Physics2D.Raycast(origin, dir, _radius, 1 << 9);
-
+        var hit = Physics2D.Raycast(origin, dir, distance, 1 << 9);
         if (!hit) return;
 
         /*
@@ -108,14 +108,11 @@ public abstract class Agent : MonoBehaviour
         Debug.DrawRay(hit.point, hit.normal, Color.green, 5f);*/
         
         dir = Vector2.Reflect(dir, hit.normal);
-        _targetPoint = origin + dir * _radius;
+        _targetPoint = origin + dir * distance;
         
-        hit = Physics2D.Raycast(origin, dir, _radius, 1 << 9);
-
+        hit = Physics2D.Raycast(origin, dir, distance, 1 << 9);
         if (!hit) return;
         
-        print("done");
-
         _targetPoint = origin;
     }
     private static float GetRandomValue()
